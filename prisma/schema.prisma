@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-py"
+  enable_experimental_decimal = true
 }
 
 datasource db {
@@ -14,21 +15,285 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @uniquevale
-  name        String
-  last_name   String
-  username    String  @unique
+  id String @id @default(uuid())
 
-  height_cm   Float?
-  weight_kg   Float?
-  age         Int?
-  gender      String?
+  supabaseId String @unique
 
-  start_weight        Float?
-  target_weight       Float?
-  weekly_weight_goal  Float?
+  email    String @unique
+  username String @unique
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile?
+
+  recipes             Recipes[]
+  ingredients         Ingredients[]
+  calendarWeeks       CalendarWeeks[]
+  shoppingLists       ShoppingList[]
+  pantryItems         PantryItems[]
+  trackingWeeks       TrackingWeeks[]
+  ingredientHistories IngredientHistory[]
+}
+
+model Profile {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  name      String
+  lastName  String
+  avatarUrl String
+
+  heightCm Float?
+  weightKg Float?
+  age      Int?
+  gender   String?
+
+  startWeight      Float?
+  targetWeight     Float?
+  weeklyWeightGoal Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recipes {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title String
+
+  steps String @db.Text
+  notes String @db.Text
+
+  kcalPerServing  Decimal @db.Decimal(10, 0)
+  gramsPerServing Decimal @db.Decimal(10, 0)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipeIngredients RecipeIngredients[]
+  mealEntries       MealEntries[]
+}
+
+model Ingredients {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  name String
+
+  toleranceStatus Tolerance @default(unknown)
+
+  notes String @db.Text
+
+  lastTestedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipeIngredients RecipeIngredients[]
+  pantryItems       PantryItems[]
+  shoppingItems     ShoppingItems[]
+  ingredientHistory IngredientHistory[]
+}
+
+enum Tolerance {
+  unknown
+  tolerated
+  doubtful
+  not_tolerated
+  reintroduction
+}
+
+model RecipeIngredients {
+  id String @id @default(uuid())
+
+  recipeId String
+  recipe   Recipes @relation(fields: [recipeId], references: [id])
+
+  ingredientId String
+  Ingredient   Ingredients @relation(fields: [ingredientId], references: [id])
+
+  quantity Decimal @db.Decimal(10, 2)
+  unit     Units   @default(g)
+
+  @@unique([recipeId, ingredientId])
+}
+
+enum Units {
+  ml
+  cl
+  L
+  g
+  Kg
+  tsp
+  tbsp
+  cups
+  pinch
+}
+
+model CalendarWeeks {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  calendarDay   CalendarDays[]
+  shoppingLists ShoppingList[]
+}
+
+model CalendarDays {
+  id String @id @default(uuid())
+
+  calendarWeekId String
+  calendarWeek   CalendarWeeks @relation(fields: [calendarWeekId], references: [id])
+
+  date DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealEntries MealEntries[]
+}
+
+model MealEntries {
+  id String @id @default(uuid())
+
+  calendarDayId String
+  calendarDay   CalendarDays @relation(fields: [calendarDayId], references: [id])
+
+  recipeId String?
+  recipe   Recipes? @relation(fields: [recipeId], references: [id])
+
+  mealType Meals
+
+  title String
+  notes String @db.Text
+
+  estimatedKcal Decimal @db.Decimal(10, 0)
+
+  status MealStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Meals {
+  breakfast
+  lunch
+  dinner
+  snack
+  free
+}
+
+enum MealStatus {
+  completed
+  skipped
+}
+
+model ShoppingList {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  calendarWeekId String
+  calendarWeek   CalendarWeeks @relation(fields: [calendarWeekId], references: [id])
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  shoppingItems ShoppingItems[]
+}
+
+model ShoppingItems {
+  id String @id @default(uuid())
+
+  shoppingListId String
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id])
+
+  ingredientId String
+  Ingredient   Ingredients @relation(fields: [ingredientId], references: [id])
+
+  neededQuantity Decimal @db.Decimal(10, 2)
+  pantryQuantity Decimal @db.Decimal(10, 2)
+  buyQuantity    Decimal @db.Decimal(10, 2)
+
+  unit Units
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PantryItems {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  ingredientId String      @unique
+  ingredient   Ingredients @relation(fields: [ingredientId], references: [id])
+
+  quantity Decimal @db.Decimal(10, 2)
+  unit     Units
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TrackingWeeks {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  weekNumber Int
+
+  startDate DateTime
+  endDate   DateTime
+
+  currentWeight Decimal @db.Decimal(10, 2)
+  targetWeight  Decimal @db.Decimal(10, 2)
+
+  expectedWeeklyLoss Decimal @db.Decimal(10, 2)
+  maxWeeklyKcal      Decimal @db.Decimal(10, 0)
+
+  notes String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IngredientHistory {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  ingredientId String
+  ingredient   Ingredients @relation(fields: [ingredientId], references: [id])
+
+  status Tolerance
+
+  reactionNotes String @db.Text
+
+  testedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
