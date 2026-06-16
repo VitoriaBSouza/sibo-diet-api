@@ -135,6 +135,7 @@ cd ~/sibo-diet-api
 source venv/bin/activate
 python main.py
 ```
+* **Run localtunnel on VSCode:** `lt --port 5001`
 
 ### Typical Workflows
 
