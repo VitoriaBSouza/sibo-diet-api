@@ -1,98 +1,155 @@
-# sibo-diet-api
-SIBO Diet API is a backend service built with Flask, PostgreSQL, and Prisma. It manages recipes, ingredients, meal planning, pantry tracking, and automated shopping list calculations based on weekly schedules and user dietary goals. The system is designed with a modular architecture to support future migration to FastAPI and Go.
-
 # SIBO Diet API
 
-Backend for a nutrition and meal planning system focused on tracking recipes, ingredients, pantry inventory, weekly planning, and dynamic shopping list generation.
+SIBO Diet API is a backend service built with Flask, PostgreSQL, and Prisma (Python Client). It manages recipes, ingredients, pantry tracking, meal planning, and automated shopping list generation based on weekly schedules and dietary goals. The architecture is modular and prepared for future scaling or migration.
 
----
+## 🛠️ Tech Stack
 
-# Tech Stack
+* **Language:** Python 3.9+
+* **Framework:** Flask
+* **Database:** PostgreSQL 17
+* **ORM:** Prisma ORM (Python client)
+* **Authentication:** Supabase (JWT authentication)
+* **CLI tool:** Node.js (Prisma CLI only)
 
-- Python 3.9+
-- Flask
-- PostgreSQL 17
-- Prisma ORM (Python client)
-- JWT Authentication (Supabase)
-- Node.js (Prisma CLI only)
+## 📂 Project Structure
 
----
-
-# Project Structure
-
+```text
 sibo-diet-api/
-├── backend/
-
+├── src/
+│   ├── db/
+│   ├── routes/
+│   ├── services/
+│   ├── middleware/
+│   └── app.py
 ├── prisma/
-
-├── .env
-
 ├── venv/
-
+├── .env
+├── requirements.txt
 └── README.md
+```
 
----
+## 🚀 Installation & Setup
 
-# Installation
-
-## Clone repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/YOUR_USER/sibo-diet-api.git
 cd sibo-diet-api
+```
 
-Create Python environment
+### 2. Set Up Virtual Environment
+```bash
 python3 -m venv venv
 source venv/bin/activate
-Install dependencies
-pip install flask prisma
-Install PostgreSQL
+```
+
+### 3. Install Python Dependencies
+```bash
+pip install flask prisma python-dotenv
+```
+
+### 4. Install Node.js & PostgreSQL
+Prisma CLI requires Node.js. If missing, install it along with PostgreSQL via Homebrew:
+
+```bash
+# Install Node.js
+brew install node
+
+# Install and start PostgreSQL 17
 brew install postgresql@17
 brew services start postgresql@17
+
+# Create the database
 createdb sibo_diet
-Install Node.js (Prisma)
-node -v
-npm -v
+```
 
-If missing:
+### 5. Environment Variables
+Create a `.env` file in the root directory:
 
-brew install node
-Initialize Prisma
-prisma init
-Configure environment
-
-Create .env:
-
+```env
 DATABASE_URL="postgresql://USER@localhost:5432/sibo_diet"
-Run migrations
-prisma migrate dev --name init
-Generate Prisma client
-prisma generate
-Run project
-python app.py
-Database Overview
-Entities
-Users
-Recipes
-Ingredients
-RecipeIngredients
-Pantry
-CalendarWeeks
-CalendarDays
-MealEntries
-ShoppingLists
-Core Logic
-Pantry
+```
 
-Stores user-owned ingredients and persists across weeks.
+### 6. Prisma Setup
+Generate the Prisma client and apply schema changes:
 
-Shopping List
+```bash
+# Generate client
+python -m prisma generate
 
-Generated dynamically from selected weeks and recipes. Does not store state.
+# Apply changes directly (Development)
+python -m prisma db push
 
-Weekly Planning
+# Alternative: Apply via migrations
+python -m prisma migrate dev --name init
+```
 
-Defines meal schedule and drives shopping calculations.
+### 7. Run the Project
+```bash
+python src/app.py
+```
 
-Authentication
-Supabase JWT authentication
-No passwords stored in backend
+## 📊 Database Overview
+
+### Entities
+* `Users`
+* `Recipes`
+* `Ingredients`
+* `RecipeIngredients`
+* `PantryItems`
+* `CalendarWeeks`
+* `CalendarDays`
+* `MealEntries`
+* `ShoppingLists`
+* `ShoppingItems`
+* `TrackingWeeks`
+* `IngredientHistory`
+
+### Core Logic
+* **Pantry:** Stores user-owned ingredients and persists them across weeks.
+* **Shopping Lists:** Generated dynamically based on weekly meal plans and recipes.
+* **Calendar System:** Manages weekly structures and daily meal scheduling.
+
+## 🔐 Authentication
+
+* Powered by Supabase JWT authentication.
+* No password storage in the backend database.
+* Users are automatically synced into Prisma after external authentication.
+
+## 🔄 Prisma Workflow
+
+### Installation & Initialization
+```bash
+pip install prisma
+python -m prisma generate
+```
+
+### Development Commands
+* **Apply schema changes directly:** `python -m prisma db push`
+* **Create a new migration:** `python -m prisma migrate dev --name init`
+* **Update an existing model:** `python -m prisma migrate dev --name update_model`
+* **Deploy migrations (Production):** `python -m prisma migrate deploy`
+* **Reset database (Destructive):** `python -m prisma migrate reset`
+* **Run port tunnel:**
+```bash
+cd ~/sibo-diet-api
+source venv/bin/activate
+python main.py
+```
+
+### Typical Workflows
+
+#### Scenario A: Adding a new table
+1. Edit `schema.prisma`
+2. Run `python -m prisma db push` (or `python -m prisma migrate dev --name add_new_table`)
+3. Regenerate client: `python -m prisma generate`
+
+#### Scenario B: Modifying an existing model
+1. Edit `schema.prisma`
+2. Run `python -m prisma migrate dev --name update_model` (or `python -m prisma db push` for a quick sync)
+
+## 📌 Important Notes
+
+* Prisma Python runs **async** internally.
+* **Always** regenerate the Prisma client after schema changes.
+* Prefer **migrations** (`prisma migrate`) for production environments.
+* Use **db push** (`prisma db push`) only for fast, local prototyping.
