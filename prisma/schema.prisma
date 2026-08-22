@@ -26,6 +26,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   profile Profile?
+  profileByUsername Profile? @relation("ProfileUsername")
 
   recipes             Recipes[]
   ingredients         Ingredients[]
@@ -41,9 +42,9 @@ model Profile {
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
-
-  name      String
-  lastName  String
+  
+  userUsername String @unique
+  username User @relation("ProfileUsername", fields: [userUsername], references: [username])
   avatarUrl String
 
   heightCm Float?
